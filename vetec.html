@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VETEC Engenharia Industrial — Sistema Integrado de Gestão Operacional</title>
+  <style>
+    :root {
+      /* Paleta Oficial inspirada na Logo VETEC (Azul Noturno, Aço Escovado e Ciano Circuito) */
+      --bg-deep: #050911;
+      --bg-navy: #0a1220;
+      --bg-panel: rgba(13, 23, 40, 0.86);
+      --bg-panel-solid: #0e182a;
+      --bg-card: rgba(18, 30, 52, 0.78);
+      --bg-card-hover: rgba(25, 42, 72, 0.92);
+
+      --steel-bright: #f1f5f9;
+      --steel-mid: #cbd5e1;
+      --steel-dark: #64748b;
+      --steel-gradient: linear-gradient(180deg, #ffffff 0%, #d8e0ea 28%, #94a3b8 52%, #e2e8f0 78%, #64748b 100%);
+
+      --cyan-glow: #38bdf8;
+      --cyan-bright: #7dd3fc;
+      --cyan-soft: rgba(56, 189, 248, 0.14);
+      --cyan-border: rgba(56, 189, 248, 0.42);
+
+      --amber-warn: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.14);
+      --green-ok: #10b981;
+      --green-soft: rgba(16, 185, 129, 0.14);
+      --red-alert: #ef4444;
+      --red-soft: rgba(239, 68, 68, 0.16);
+
+      --border-subtle: rgba(148, 163, 184, 0.18);
+      --border-strong: rgba(148, 163, 184, 0.34);
+
+      --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      --font-display: 'Segoe UI', 'Arial Black', Impact, sans-serif;
+      --font-mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--steel-bright);
+      font-family: var(--font-sans);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      user-select: none;
+    }
+
+    /* CAMADA 1: TEXTURA HEXAGONAL E VINHETA DA LOGO VETEC */
+    .bg-hex-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(26, 54, 93, 0.45) 0%, rgba(5, 9, 17, 0.96) 78%),
+        repeating-linear-gradient(60deg, rgba(56, 189, 248, 0.025) 0px, rgba(56, 189, 248, 0.025) 1px, transparent 1px, transparent 18px),
+        repeating-linear-gradient(-60deg, rgba(56, 189, 248, 0.025) 0px, rgba(56, 189, 248, 0.025) 1px, transparent 1px, transparent 18px);
+    }
+
+    /* CAMADA 2: CANVAS DE CIRCUITOS ILUMINADOS */
+    #circuitCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.65;
+    }
+
+    /* EFEITO AÇO ESCOVADO VETEC */
+    .vetec-metal-logo {
+      font-family: var(--font-display);
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, rgba(0,0,0,0.08) 1px, rgba(0,0,0,0.08) 2px),
+        linear-gradient(180deg, #ffffff 0%, #dbe4ee 26%, #94a3b8 50%, #e2e8f0 74%, #64748b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 0 #334155) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
+      display: inline-block;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      height: 68px;
+      background: rgba(8, 14, 26, 0.9);
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+    }
+
+    .brand-logo-box {
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #0d1829 0%, #162640 100%);
+      border: 1px solid var(--cyan-border);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .brand-logo-box img {
+      height: 100%;
+      width: auto;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-logo-fallback {
+      font-size: 22px;
+      letter-spacing: 3px;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border-strong);
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: var(--steel-mid);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .topbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slide-selector {
+      background: var(--bg-panel-solid);
+      color: var(--steel-bright);
+      border: 1px solid var(--border-strong);
+      padding: 8px 14px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .slide-selector:hover, .slide-selector:focus {
+      border-color: var(--cyan-glow);
+    }
+
+    .btn-top {
+      background: rgba(56, 189, 248, 0.08);
+      color: var(--cyan-bright);
+      border: 1px solid var(--cyan-border);
+      padding: 8px 15px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-top:hover {
+      background: rgba(56, 189, 248, 0.22);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+      color: #fff;
+    }
+
+    /* VIEWPORT & SLIDES */
+    .viewport {
+      flex: 1;
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 40px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      opacity: 0;
+      transform: translateY(18px) scale(0.99);
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* ANIMAÇÃO ESCALONADA DOS ELEMENTOS INTERNOS */
+    .slide.active .anim-item {
+      animation: fadeUpIn 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+    .slide.active .anim-item:nth-child(1) { animation-delay: 0.05s; }
+    .slide.active .anim-item:nth-child(2) { animation-delay: 0.12s; }
+    .slide.active .anim-item:nth-child(3) { animation-delay: 0.19s; }
+    .slide.active .anim-item:nth-child(4) { animation-delay: 0.26s; }
+    .slide.active .anim-item:nth-child(5) { animation-delay: 0.33s; }
+    .slide.active .anim-item:nth-child(6) { animation-delay: 0.40s; }
+
+    @keyframes fadeUpIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SLIDE HEADER */
+    .slide-header {
+      margin-bottom: 24px;
+      position: relative;
+      padding-left: 20px;
+      border-left: 4px solid var(--cyan-glow);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .slide-kicker {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2.2px;
+      color: var(--cyan-glow);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slide-kicker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan-glow);
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .slide-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--steel-bright);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .slide-lead {
+      font-size: 18px;
+      color: var(--steel-mid);
+      margin-top: 8px;
+      max-width: 1000px;
+      line-height: 1.5;
+    }
+
+    /* GRIDS & CARDS */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; align-content: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; flex: 1; align-content: start; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-content: start; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(8px);
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(203, 213, 225, 0.35), transparent);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--cyan-border);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), 0 0 15px rgba(56, 189, 248, 0.1);
+    }
+
+    .card-cyan {
+      border-color: var(--cyan-border);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.11), rgba(15, 25, 45, 0.88));
+    }
+
+    .card-steel {
+      border-color: rgba(203, 213, 225, 0.4);
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(15, 23, 42, 0.9) 100%);
+    }
+
+    .card-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      line-height: 1.3;
+    }
+
+    .card-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      background: var(--cyan-soft);
+      border: 1px solid var(--cyan-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan-bright);
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .card-text {
+      font-size: 16px;
+      color: var(--steel-mid);
+      line-height: 1.6;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+    .badge-cyan { background: var(--cyan-soft); color: var(--cyan-bright); border: 1px solid var(--cyan-border); }
+    .badge-steel { background: rgba(203,213,225,0.12); color: var(--steel-bright); border: 1px solid rgba(203,213,225,0.35); }
+    .badge-amber { background: var(--amber-soft); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+    .badge-green { background: var(--green-soft); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+    .badge-red { background: var(--red-soft); color: #f87171; border: 1px solid rgba(239,68,68,0.45); }
+
+    /* CAPA E ENCERRAMENTO COM LOGO HERO */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: center;
+      flex: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-logo-showcase {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--cyan-border);
+      background: radial-gradient(circle at center, #13233f 0%, #070d19 100%);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 35px rgba(56, 189, 248, 0.18);
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-logo-showcase img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero-title {
+      font-size: 54px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.8px;
+      margin-bottom: 20px;
+    }
+
+    .hero-quote {
+      font-size: 24px;
+      color: var(--cyan-bright);
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding: 14px 20px;
+      border-left: 4px solid var(--cyan-glow);
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.12), transparent);
+      border-radius: 0 8px 8px 0;
+      line-height: 1.4;
+    }
+
+    .hero-sub {
+      font-size: 19px;
+      color: var(--steel-mid);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .btn-cta-start {
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      color: #04101e;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .btn-cta-start:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 28px rgba(56, 189, 248, 0.7);
+      background: linear-gradient(135deg, #38bdf8 0%, #bae6fd 100%);
+    }
+
+    /* PIPELINES E FLUXOS ANIMADOS */
+    .flow-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .flow-node {
+      background: rgba(15, 26, 46, 0.95);
+      border: 1px solid var(--border-strong);
+      padding: 11px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .flow-node.interactive {
+      cursor: pointer;
+    }
+
+    .flow-node.interactive:hover, .flow-node.active-step {
+      border-color: var(--cyan-glow);
+      background: rgba(56, 189, 248, 0.18);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .flow-arrow {
+      color: var(--cyan-glow);
+      font-family: var(--font-mono);
+      font-weight: bold;
+      font-size: 17px;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.5; text-shadow: none; }
+      50% { opacity: 1; text-shadow: 0 0 8px var(--cyan-glow); }
+    }
+
+    /* MOCKUP INTERATIVO DA O.S. (SLIDE 5) */
+    .os-window {
+      background: rgba(10, 18, 32, 0.95);
+      border: 1px solid var(--cyan-border);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      max-height: 520px;
+    }
+
+    .os-top {
+      background: linear-gradient(90deg, #0f1c32 0%, #162844 100%);
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .os-meta {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .os-meta-item span {
+      display: block;
+      font-size: 12px;
+      color: var(--steel-dark);
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 2px;
+    }
+
+    .os-meta-item strong {
+      font-size: 16px;
+      color: var(--steel-bright);
+    }
+
+    .os-tabs {
+      display: flex;
+      background: #08101d;
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+    }
+
+    .os-tab {
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--steel-mid);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+
+    .os-tab:hover {
+      color: #fff;
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .os-tab.active {
+      color: var(--cyan-bright);
+      border-bottom-color: var(--cyan-glow);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .os-body {
+      padding: 24px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* DASHBOARD & TABELAS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-top: 3px solid var(--cyan-glow);
+      padding: 18px;
+      border-radius: 6px;
+      position: relative;
+    }
+
+    .kpi-box.warn { border-top-color: var(--amber-warn); }
+    .kpi-box.ok { border-top-color: var(--green-ok); }
+
+    .kpi-value {
+      font-family: var(--font-mono);
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .kpi-label {
+      font-size: 14px;
+      color: var(--steel-mid);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(8, 15, 28, 0.9);
+      color: var(--cyan-bright);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--steel-bright);
+    }
+
+    /* CHECKLISTS */
+    .check-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .check-list li {
+      font-size: 16px;
+      color: var(--steel-mid);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.5;
+    }
+
+    .check-list li::before {
+      content: "◈";
+      color: var(--cyan-glow);
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* TIMELINE */
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px 28px;
+    }
+
+    .tl-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--cyan-glow);
+      padding: 12px 16px;
+      border-radius: 6px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .tl-item:hover {
+      transform: translateX(4px);
+      border-color: var(--cyan-bright);
+    }
+
+    .tl-date {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan-bright);
+      background: var(--cyan-soft);
+      padding: 5px 10px;
+      border-radius: 4px;
+      min-width: 64px;
+      text-align: center;
+    }
+
+    .tl-desc {
+      font-size: 16px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* BOTTOM BAR COM DOTS INTERATIVOS */
+    .bottombar {
+      height: 60px;
+      background: rgba(8, 14, 26, 0.94);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--cyan-bright);
+      font-weight: 700;
+      min-width: 70px;
+    }
+
+    .dot-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.28);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    .dot-btn:hover {
+      background: rgba(56, 189, 248, 0.6);
+      transform: scale(1.25);
+    }
+
+    .dot-btn.active {
+      width: 28px;
+      border-radius: 5px;
+      background: var(--cyan-glow);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-nav {
+      background: var(--bg-panel-solid);
+      color: var(--steel-bright);
+      border: 1px solid var(--border-strong);
+      padding: 9px 18px;
+      border-radius: 5px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn-nav:hover:not(:disabled) {
+      border-color: var(--cyan-glow);
+      background: var(--cyan-soft);
+      color: #fff;
+    }
+
+    .btn-nav:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-grid, .grid-2, .grid-3, .grid-4, .kpi-grid, .timeline-grid {
+        grid-template-columns: 1fr;
+      }
+      .slide { padding: 24px 28px; }
+      .dot-nav { display: none; }
+      .hero-title { font-size: 42px; }
+      .slide-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CAMADAS DE FUNDO INSPIRADAS NA LOGO VETEC -->
+  <div class="bg-hex-layer"></div>
+  <canvas id="circuitCanvas"></canvas>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand" id="brandHome" title="Voltar para a Capa (Slide 1)">
+      <div class="brand-logo-box">
+        <img src="logo-vetec-hero.jpg" alt="VETEC" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+        <span class="vetec-metal-logo brand-logo-fallback" style="display:none;">VETEC</span>
+      </div>
+      <div class="brand-divider"></div>
+      <div class="brand-subtitle">Engenharia Industrial • Sistema Integrado de Gestão Operacional</div>
+    </div>
+
+    <div class="topbar-controls">
+      <select id="slideSelector" class="slide-selector" aria-label="Navegar para slide">
+        <option value="0">01. Capa — VETEC Gestão Operacional</option>
+        <option value="1">02. O Desafio Industrial</option>
+        <option value="2">03. O Problema que o Sistema Resolve</option>
+        <option value="3">04. A Proposta — Plataforma Única</option>
+        <option value="4">05. Como Funciona uma O.S. (Simulador)</option>
+        <option value="5">06. O Fluxo da VETEC (Interativo)</option>
+        <option value="6">07. Cada Setor Conectado (Hub)</option>
+        <option value="7">08. Dashboard da Gestão (Mockup)</option>
+        <option value="8">09. Rastreabilidade Ponta a Ponta</option>
+        <option value="9">10. Compras + Almoxarifado</option>
+        <option value="10">11. Produção + PCP</option>
+        <option value="11">12. Documentos e Informações</option>
+        <option value="12">13. Segurança e Permissões (Simulador)</option>
+        <option value="13">14. O Que a Gestão Ganha</option>
+        <option value="14">15. Visão Futura</option>
+        <option value="15">16. Implementação em 10 Fases</option>
+        <option value="16">17. Tecnologia e Infraestrutura Própria</option>
+        <option value="17">18. Encerramento</option>
+      </select>
+      <button class="btn-top" id="btnFullscreen" title="Alternar Tela Cheia (Tecla F)">
+        <span>⛶ Tela Cheia [F]</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- VIEWPORT DE SLIDES -->
+  <main class="viewport" id="viewport">
+
+    <!-- SLIDE 1: CAPA -->
+    <section class="slide active">
+      <div class="hero-grid">
+        <div class="anim-item">
+          <div class="slide-kicker">PROPOSTA EXECUTIVA • ENGENHARIA INDUSTRIAL</div>
+          <h1 class="hero-title">
+            <span class="vetec-metal-logo" style="font-size:64px; display:block; margin-bottom:10px;">VETEC</span>
+            Sistema Integrado de Gestão Operacional
+          </h1>
+          <div class="hero-quote">"Da demanda à entrega, todas as etapas conectadas."</div>
+          <p class="hero-sub">
+            Uma proposta para transformar o processo operacional da VETEC em uma operação integrada, rastreável e orientada por dados — projetada sob medida para a realidade da engenharia industrial.
+          </p>
+          <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <button class="btn-cta-start" onclick="window.goToSlide(1)">Iniciar Apresentação →</button>
+            <span class="badge badge-cyan" style="font-size:14px; padding:6px 12px;">Servidor Próprio VETEC</span>
+          </div>
+        </div>
+
+        <div class="anim-item">
+          <div class="hero-logo-showcase">
+            <!-- 
+              ATENÇÃO: A imagem abaixo usa um SVG de alta qualidade embutido como fallback. 
+              Se você tiver o arquivo de imagem da logo da VETEC, basta substituir 
+              "logo-vetec-hero.jpg" pelo nome do seu arquivo (ex: "sua-logo.png").
+            -->
+            <img src="logo-vetec-hero.jpg" alt="Identidade Visual VETEC" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgNTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGExMjIwIiByeD0iMTIiLz48cG9seWdvbiBwb2ludHM9IjQwMCw4MCA2MjAsMTcwIDYyMCwzMzAgNDAwLDQyMCAxODAsMzMwIDE4MCwxNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzM4YmRmOCIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjMiLz48dGV4dCB4PSI0MDAiIHk9IjI4MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjEwMCIgZmlsbD0iI2YxZjVmOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjEyIj5WRVRFQzwvdGV4dD48dGV4dCB4PSI0MDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzM4YmRmOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjYiPkVOR0VOSEFSSUEgSU5EVVNUUklBTDwvdGV4dD48bGluZSB4MT0iMjUwIiB5MT0iMzcwIiB4Mj0iNTUwIiB5Mj0iMzcwIiBzdHJva2U9IiMzOGJkZjgiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg=='" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: O DESAFIO -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">02 • O DESAFIO OPERACIONAL</div>
+          <h2 class="slide-title">A Complexidade Natural da Engenharia Industrial</h2>
+          <p class="slide-lead">Operações industriais possuem diversas etapas e setores envolvidos. Quanto maior a cadeia produtiva, maior a importância de manter sincronia absoluta.</p>
+        </div>
+        <span class="badge badge-cyan" style="font-size:13px;">10 Macroetapas Encadeadas</span>
+      </div>
+
+      <div class="card card-cyan anim-item" style="margin-bottom: 24px;">
+        <div class="card-title">
+          <span>Cadeia de Valor Industrial — Do Pedido ao Faturamento</span>
+          <span class="badge badge-steel">Fluxo Contínuo</span>
+        </div>
+        <div class="flow-chain">
+          <div class="flow-node">DEMANDA</div><span class="flow-arrow">→</span>
+          <div class="flow-node">ENGENHARIA</div><span class="flow-arrow">→</span>
+          <div class="flow-node">ORÇAMENTO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">COMPRAS</div><span class="flow-arrow">→</span>
+          <div class="flow-node">ALMOXARIFADO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">PCP</div><span class="flow-arrow">→</span>
+          <div class="flow-node">PRODUÇÃO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">CAMPO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">MEDIÇÃO</div><span class="flow-arrow">→</span>
+          <div class="flow-node active-step">FATURAMENTO</div>
+        </div>
+      </div>
+
+      <div class="grid-3 anim-item">
+        <div class="card">
+          <div class="card-title">
+            <span>Governança e Prazos</span>
+            <div class="card-icon-wrap">⏱</div>
+          </div>
+          <ul class="check-list">
+            <li><strong>Informações centralizadas</strong> em uma base única</li>
+            <li><strong>Responsáveis definidos</strong> em cada mudança de etapa</li>
+            <li><strong>Prazos</strong> acompanhados com visibilidade preventiva</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Acervo e Histórico</span>
+            <div class="card-icon-wrap">📐</div>
+          </div>
+          <ul class="check-list">
+            <li><strong>Documentos</strong> técnicos, propostas e desenhos organizados</li>
+            <li><strong>Histórico</strong> preservado para consultas futuras</li>
+            <li>Proteção do conhecimento técnico dentro da empresa</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Comunicação e Rastro</span>
+            <div class="card-icon-wrap">🔗</div>
+          </div>
+          <ul class="check-list">
+            <li><strong>Comunicação</strong> fluida na passagem entre setores</li>
+            <li><strong>Rastreabilidade</strong> completa de decisões e revisões</li>
+            <li>Visão clara do andamento real de cada entrega</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: O PROBLEMA QUE O SISTEMA RESOLVE -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">03 • O PROBLEMA QUE O SISTEMA RESOLVE</div>
+          <h2 class="slide-title">Da Informação Espalhada para Uma Operação Conectada</h2>
+          <p class="slide-lead">Em operações desse tipo, é comum ocorrer dispersão de dados entre ferramentas isoladas. O sistema foi pensado para reduzir esse tipo de fragmentação.</p>
+        </div>
+      </div>
+
+      <div class="grid-2 anim-item">
+        <div class="card" style="border-color: rgba(239, 68, 68, 0.4);">
+          <div class="card-title">
+            <span>Informação Espalhada (Cenário Comum no Setor)</span>
+            <span class="badge badge-red">Fragmentação</span>
+          </div>
+          <!-- Diagrama SVG de Fragmentação -->
+          <svg viewBox="0 0 460 110" style="width:100%; height:110px; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px;">
+            <line x1="60" y1="25" x2="210" y2="85" stroke="#ef4444" stroke-dasharray="4 3" stroke-width="1.5"/>
+            <line x1="60" y1="85" x2="360" y2="25" stroke="#ef4444" stroke-dasharray="4 3" stroke-width="1.5"/>
+            <line x1="210" y1="25" x2="360" y2="85" stroke="#f59e0b" stroke-dasharray="4 3" stroke-width="1.5"/>
+            <rect x="15" y="12" width="95" height="28" rx="4" fill="#1e293b" stroke="#ef4444"/>
+            <text x="62" y="30" fill="#f87171" font-size="11" text-anchor="middle" font-family="sans-serif">Planilhas</text>
+            <rect x="15" y="68" width="95" height="28" rx="4" fill="#1e293b" stroke="#ef4444"/>
+            <text x="62" y="86" fill="#f87171" font-size="11" text-anchor="middle" font-family="sans-serif">Mensagens</text>
+            <rect x="175" y="12" width="105" height="28" rx="4" fill="#1e293b" stroke="#f59e0b"/>
+            <text x="227" y="30" fill="#fbbf24" font-size="11" text-anchor="middle" font-family="sans-serif">E-mails</text>
+            <rect x="175" y="68" width="105" height="28" rx="4" fill="#1e293b" stroke="#f59e0b"/>
+            <text x="227" y="86" fill="#fbbf24" font-size="11" text-anchor="middle" font-family="sans-serif">Documentos</text>
+            <rect x="330" y="12" width="115" height="28" rx="4" fill="#1e293b" stroke="#ef4444"/>
+            <text x="387" y="30" fill="#f87171" font-size="11" text-anchor="middle" font-family="sans-serif">Sistemas Separados</text>
+            <rect x="330" y="68" width="115" height="28" rx="4" fill="#1e293b" stroke="#ef4444"/>
+            <text x="387" y="86" fill="#f87171" font-size="11" text-anchor="middle" font-family="sans-serif">Memória Individual</text>
+          </svg>
+          <ul class="check-list">
+            <li><strong>Planilhas e controles paralelos:</strong> esforço duplicado de digitação</li>
+            <li><strong>Mensagens e e-mails:</strong> decisões técnicas difíceis de localizar depois</li>
+            <li><strong>Documentos e sistemas separados:</strong> risco de usar versão desatualizada</li>
+            <li><strong>Conhecimento concentrado em pessoas:</strong> baixa padronização operacional</li>
+          </ul>
+        </div>
+
+        <div class="card card-cyan">
+          <div class="card-title">
+            <span>UMA OPERAÇÃO CONECTADA (Proposta VETEC)</span>
+            <span class="badge badge-cyan">Centralização</span>
+          </div>
+          <!-- Diagrama SVG de Operação Conectada -->
+          <svg viewBox="0 0 460 110" style="width:100%; height:110px; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px;">
+            <line x1="50" y1="55" x2="410" y2="55" stroke="#38bdf8" stroke-width="3"/>
+            <circle cx="90" cy="55" r="6" fill="#38bdf8"/>
+            <circle cx="230" cy="55" r="8" fill="#7dd3fc"/>
+            <circle cx="370" cy="55" r="6" fill="#38bdf8"/>
+            <rect x="30" y="12" width="120" height="28" rx="4" fill="#0f172a" stroke="#38bdf8"/>
+            <text x="90" y="30" fill="#bae6fd" font-size="11" text-anchor="middle" font-family="sans-serif">Engenharia & Orç.</text>
+            <rect x="170" y="68" width="120" height="28" rx="4" fill="#0f172a" stroke="#7dd3fc"/>
+            <text x="230" y="86" fill="#ffffff" font-weight="bold" font-size="11" text-anchor="middle" font-family="sans-serif">O.S. CENTRAL VETEC</text>
+            <rect x="310" y="12" width="120" height="28" rx="4" fill="#0f172a" stroke="#38bdf8"/>
+            <text x="370" y="30" fill="#bae6fd" font-size="11" text-anchor="middle" font-family="sans-serif">Compras, PCP & Fábrica</text>
+          </svg>
+          <ul class="check-list">
+            <li><strong>Centralização das informações:</strong> tudo vinculado diretamente à O.S.</li>
+            <li><strong>Potencial de redução de retrabalho:</strong> acesso seguro à revisão vigente</li>
+            <li><strong>Maior visibilidade operacional:</strong> visão clara do status de cada serviço</li>
+            <li><strong>Melhor controle do processo:</strong> histórico formal de ponta a ponta</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: A PROPOSTA -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">04 • A PROPOSTA</div>
+          <h2 class="slide-title">Uma Única Plataforma para Toda a Operação</h2>
+          <p class="slide-lead">Do cadastro do cliente ao faturamento final, cada módulo alimenta o próximo sem perda de contexto.</p>
+        </div>
+        <span class="badge badge-cyan" style="font-size:13px;">12 Elos Conectados</span>
+      </div>
+
+      <div class="card card-steel anim-item" style="margin-bottom: 24px;">
+        <div class="card-title">Arquitetura de Fluxo Contínuo</div>
+        <div class="flow-chain">
+          <div class="flow-node">1. Clientes</div><span class="flow-arrow">→</span>
+          <div class="flow-node">2. Demandas</div><span class="flow-arrow">→</span>
+          <div class="flow-node active-step">3. O.S.</div><span class="flow-arrow">→</span>
+          <div class="flow-node">4. Orçamentos</div><span class="flow-arrow">→</span>
+          <div class="flow-node">5. Projetos</div><span class="flow-arrow">→</span>
+          <div class="flow-node">6. Compras</div><span class="flow-arrow">→</span>
+          <div class="flow-node">7. Almoxarifado</div><span class="flow-arrow">→</span>
+          <div class="flow-node">8. PCP</div><span class="flow-arrow">→</span>
+          <div class="flow-node">9. Produção</div><span class="flow-arrow">→</span>
+          <div class="flow-node">10. Montagem</div><span class="flow-arrow">→</span>
+          <div class="flow-node">11. Medição</div><span class="flow-arrow">→</span>
+          <div class="flow-node">12. Faturamento</div>
+        </div>
+      </div>
+
+      <div class="grid-4 anim-item">
+        <div class="card">
+          <span class="badge badge-cyan">Eixo 01</span>
+          <div class="card-title">Comercial & Entrada</div>
+          <p class="card-text">Clientes, Demandas, abertura da O.S. e Orçamentos com controle de revisões e histórico de propostas.</p>
+        </div>
+        <div class="card">
+          <span class="badge badge-cyan">Eixo 02</span>
+          <div class="card-title">Engenharia & Projetos</div>
+          <p class="card-text">Visitas técnicas, levantamento de escopo, detalhamento técnico, desenhos e listas de materiais.</p>
+        </div>
+        <div class="card">
+          <span class="badge badge-cyan">Eixo 03</span>
+          <div class="card-title">Suprimentos & Fábrica</div>
+          <p class="card-text">Compras, recebimento no Almoxarifado, programação do PCP e apontamentos de Produção.</p>
+        </div>
+        <div class="card">
+          <span class="badge badge-cyan">Eixo 04</span>
+          <div class="card-title">Campo & Fechamento</div>
+          <p class="card-text">Montagem externa quando aplicável, boletins de Medição, Faturamento e checklist de conclusão.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: COMO FUNCIONA UMA O.S. -->
+    <section class="slide">
+      <div class="slide-header anim-item" style="margin-bottom: 16px;">
+        <div>
+          <div class="slide-kicker">05 • COMO FUNCIONA UMA O.S. (SIMULADOR INTERATIVO)</div>
+          <h2 class="slide-title">A Ordem de Serviço como "Fio Condutor"</h2>
+          <p class="slide-lead">Clique nas 11 abas abaixo para experimentar como o gestor ou colaborador consulta tudo sobre o trabalho em um único lugar.</p>
+        </div>
+        <span class="badge badge-amber" style="font-size:13px;">Dados Demonstrativos</span>
+      </div>
+
+      <div class="os-window anim-item">
+        <div class="os-top">
+          <div class="os-meta">
+            <div class="os-meta-item">
+              <span>Ordem de Serviço</span>
+              <strong style="color:var(--cyan-bright); font-family:var(--font-mono);">O.S. #2026-00124</strong>
+            </div>
+            <div class="os-meta-item">
+              <span>Cliente</span>
+              <strong>Empresa XYZ</strong>
+            </div>
+            <div class="os-meta-item">
+              <span>Serviço</span>
+              <strong>Fabricação de estrutura</strong>
+            </div>
+          </div>
+          <div>
+            <span class="badge badge-cyan" style="font-size:13px;">Status: Em produção</span>
+          </div>
+        </div>
+
+        <div class="os-tabs" id="osTabs">
+          <button class="os-tab active" data-tab="resumo">Resumo</button>
+          <button class="os-tab" data-tab="orcamento">Orçamento</button>
+          <button class="os-tab" data-tab="projeto">Projeto</button>
+          <button class="os-tab" data-tab="compras">Compras</button>
+          <button class="os-tab" data-tab="materiais">Materiais</button>
+          <button class="os-tab" data-tab="pcp">PCP</button>
+          <button class="os-tab" data-tab="producao">Produção</button>
+          <button class="os-tab" data-tab="montagem">Montagem</button>
+          <button class="os-tab" data-tab="medicao">Medição</button>
+          <button class="os-tab" data-tab="documentos">Documentos</button>
+          <button class="os-tab" data-tab="historico">Histórico</button>
+        </div>
+
+        <div class="os-body" id="osTabContent"></div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: O FLUXO DA VETEC (INTERATIVO) -->
+    <section class="slide">
+      <div class="slide-header anim-item" style="margin-bottom: 16px;">
+        <div>
+          <div class="slide-kicker">06 • O FLUXO OFICIAL DA VETEC</div>
+          <h2 class="slide-title">Jornada Operacional Ponta a Ponta</h2>
+          <p class="slide-lead">Clique em qualquer etapa do fluxo abaixo para inspecionar seu papel no sistema.</p>
+        </div>
+        <span class="badge badge-cyan" style="font-size:13px;">Clique nas Etapas para Inspecionar</span>
+      </div>
+
+      <div class="grid-2 anim-item" style="grid-template-columns: 1.35fr 0.65fr;">
+        <div class="card">
+          <div class="card-title">Mapa do Processo VETEC</div>
+          <div class="flow-chain" id="vetecFlowInteractive">
+            <div class="flow-node interactive active-step" data-step="0">1. RECEBIMENTO DA DEMANDA</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="1">2. ABERTURA DA O.S.</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="2" style="border-style:dashed;">3. VISITA TÉCNICA (QUANDO NECESSÁRIA)</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="3">4. LEVANTAMENTO DO ESCOPO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="4">5. ELABORAÇÃO DO ORÇAMENTO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="5">6. ENVIO AO CLIENTE</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="6">7. AGUARDANDO APROVAÇÃO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="7">8. APROVAÇÃO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="8">9. PROJETOS / DETALHAMENTO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="9">10. COMPRAS</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="10">11. ALMOXARIFADO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="11">12. PCP</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="12">13. PRODUÇÃO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="13" style="border-style:dashed;">14. MONTAGEM EM CAMPO (QUANDO NECESSÁRIA)</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="14">15. MEDIÇÃO / FATURAMENTO</div><span class="flow-arrow">→</span>
+            <div class="flow-node interactive" data-step="15">16. O.S. FINALIZADA</div>
+          </div>
+        </div>
+
+        <div class="card card-cyan" id="flowStepDetail">
+          <!-- Preenchido via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: CADA SETOR CONECTADO -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">07 • INTEGRAÇÃO INTERSETORIAL</div>
+          <h2 class="slide-title">Cada Setor Conectado à Mesma Informação Central</h2>
+          <p class="slide-lead">Passe o mouse ou clique em um setor para visualizar sua interação direta com a base única da O.S.</p>
+        </div>
+      </div>
+
+      <div class="grid-3 anim-item">
+        <div class="card">
+          <div class="card-title"><span>COMERCIAL</span><span class="badge badge-cyan">Demanda & Proposta</span></div>
+          <p class="card-text">Registra solicitações de clientes, acompanha envio de orçamentos, negociações e formaliza a aprovação.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>ENGENHARIA</span><span class="badge badge-cyan">Escopo & Projetos</span></div>
+          <p class="card-text">Conduz visitas técnicas, detalha projetos executivos, controla revisões de desenhos e especifica materiais.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>COMPRAS</span><span class="badge badge-cyan">Suprimentos</span></div>
+          <p class="card-text">Transforma necessidades técnicas em cotações e pedidos de compra vinculados diretamente à O.S.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>ALMOXARIFADO</span><span class="badge badge-cyan">Estoque & Recebimento</span></div>
+          <p class="card-text">Confere entregas de fornecedores, controla saldos físicos e disponibiliza materiais para a O.S.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>PCP</span><span class="badge badge-cyan">Planejamento</span></div>
+          <p class="card-text">Programa a fila de fabricação cruzando disponibilidade de projeto, materiais e prazos de entrega.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>PRODUÇÃO</span><span class="badge badge-cyan">Fábrica</span></div>
+          <p class="card-text">Executa as ordens de produção planejadas, apontando início, conclusão, qualidade e ocorrências.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>CAMPO</span><span class="badge badge-cyan">Montagem Externa</span></div>
+          <p class="card-text">Registra mobilização de equipe, avanço da montagem no cliente, ocorrências e evidências fotográficas.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>FINANCEIRO</span><span class="badge badge-cyan">Medição & Faturamento</span></div>
+          <p class="card-text">Acompanha boletins de medição aprovados e processa o faturamento sem perda de informações.</p>
+        </div>
+        <div class="card card-steel">
+          <div class="card-title"><span>GESTÃO</span><span class="badge badge-steel">Coordenação Global</span></div>
+          <p class="card-text">Enxerga toda a operação em tempo real, monitora prazos, identifica gargalos e apoia tomadas de decisão.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: DASHBOARD DA GESTÃO -->
+    <section class="slide">
+      <div class="slide-header anim-item" style="margin-bottom: 16px;">
+        <div>
+          <div class="slide-kicker">08 • DASHBOARD DA GESTÃO (MOCKUP REALISTA)</div>
+          <h2 class="slide-title">Visibilidade Executiva e Identificação de Gargalos</h2>
+          <p class="slide-lead">A direção acompanha o volume de trabalho por etapa e visualiza imediatamente onde estão as O.S. paradas.</p>
+        </div>
+        <span class="badge badge-amber" style="font-size:13px;">Dados Demonstrativos</span>
+      </div>
+
+      <div class="kpi-grid anim-item">
+        <div class="kpi-box">
+          <div class="kpi-value" data-count="17">17</div>
+          <div class="kpi-label">O.S. em andamento</div>
+        </div>
+        <div class="kpi-box warn">
+          <div class="kpi-value" data-count="6">6</div>
+          <div class="kpi-label">Aguardando aprovação</div>
+        </div>
+        <div class="kpi-box ok">
+          <div class="kpi-value" data-count="7">7</div>
+          <div class="kpi-label">Em produção</div>
+        </div>
+        <div class="kpi-box warn">
+          <div class="kpi-value" data-count="3">3</div>
+          <div class="kpi-label">Em compras</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-value" data-count="2">2</div>
+          <div class="kpi-label">Em montagem</div>
+        </div>
+        <div class="kpi-box ok">
+          <div class="kpi-value" data-count="3">3</div>
+          <div class="kpi-label">Aguardando faturamento</div>
+        </div>
+      </div>
+
+      <div class="card anim-item" style="border-color: rgba(239, 68, 68, 0.45);">
+        <div class="card-title">
+          <span>🚨 Alerta de Gargalos — O.S. PARADAS</span>
+          <span class="badge badge-red">Atenção Gerencial (Demonstrativo)</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ordem de Serviço</th>
+              <th>Etapa Atual</th>
+              <th>Tempo / Desvio</th>
+              <th>Ação Gerencial Sugerida</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong style="font-family:var(--font-mono); color:var(--cyan-bright);">O.S. #1024</strong></td>
+              <td>Aguardando aprovação</td>
+              <td><span class="badge badge-red">14 dias</span></td>
+              <td>Acionar retorno comercial junto ao cliente</td>
+            </tr>
+            <tr>
+              <td><strong style="font-family:var(--font-mono); color:var(--cyan-bright);">O.S. #1031</strong></td>
+              <td>Aguardando material</td>
+              <td><span class="badge badge-amber">9 dias</span></td>
+              <td>Verificar prazo de entrega do fornecedor em Compras</td>
+            </tr>
+            <tr>
+              <td><strong style="font-family:var(--font-mono); color:var(--cyan-bright);">O.S. #1037</strong></td>
+              <td>Projeto</td>
+              <td><span class="badge badge-red">4 dias acima do prazo</span></td>
+              <td>Avaliar prioridade técnica na fila da Engenharia</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: RASTREABILIDADE -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">09 • RASTREABILIDADE COMPLETA</div>
+          <h2 class="slide-title">Linha do Tempo Auditável de Cada O.S.</h2>
+          <p class="slide-lead">"Cada etapa gera histórico, responsável e registro." Nenhuma informação se perde ao longo das semanas.</p>
+        </div>
+        <span class="badge badge-cyan" style="font-size:13px;">Histórico Imutável</span>
+      </div>
+
+      <div class="timeline-grid anim-item">
+        <div class="tl-item"><span class="tl-date">24/10</span><span class="tl-desc">Demanda recebida</span></div>
+        <div class="tl-item"><span class="tl-date">24/10</span><span class="tl-desc">O.S. criada</span></div>
+        <div class="tl-item"><span class="tl-date">25/10</span><span class="tl-desc">Visita técnica</span></div>
+        <div class="tl-item"><span class="tl-date">27/10</span><span class="tl-desc">Orçamento enviado</span></div>
+        <div class="tl-item"><span class="tl-date">30/10</span><span class="tl-desc">Revisão solicitada</span></div>
+        <div class="tl-item"><span class="tl-date">02/11</span><span class="tl-desc">Orçamento aprovado</span></div>
+        <div class="tl-item"><span class="tl-date">02/11</span><span class="tl-desc">Projeto iniciado</span></div>
+        <div class="tl-item"><span class="tl-date">05/11</span><span class="tl-desc">Compra realizada</span></div>
+        <div class="tl-item"><span class="tl-date">08/11</span><span class="tl-desc">Material recebido</span></div>
+        <div class="tl-item" style="border-left-color:var(--green-ok);"><span class="tl-date" style="color:#34d399;">10/11</span><span class="tl-desc">Produção iniciada</span></div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: COMPRAS + ALMOXARIFADO -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">10 • SUPRIMENTOS CONECTADOS</div>
+          <h2 class="slide-title">Compras + Almoxarifado Vinculados à O.S.</h2>
+          <p class="slide-lead">Do levantamento de necessidade na Engenharia até a disponibilização física do material para a fábrica.</p>
+        </div>
+      </div>
+
+      <div class="card card-cyan anim-item" style="margin-bottom: 24px;">
+        <div class="card-title">Fluxo Integrado de Suprimentos</div>
+        <div class="flow-chain">
+          <div class="flow-node">NECESSIDADE</div><span class="flow-arrow">→</span>
+          <div class="flow-node">SOLICITAÇÃO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">COTAÇÃO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">APROVAÇÃO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">PEDIDO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">FORNECEDOR</div><span class="flow-arrow">→</span>
+          <div class="flow-node">RECEBIMENTO</div><span class="flow-arrow">→</span>
+          <div class="flow-node">ALMOXARIFADO</div><span class="flow-arrow">→</span>
+          <div class="flow-node active-step">DISPONIBILIZAÇÃO PARA A O.S.</div>
+        </div>
+      </div>
+
+      <div class="grid-3 anim-item">
+        <div class="card">
+          <div class="card-title">Rastreio por O.S.</div>
+          <p class="card-text">Toda solicitação e pedido de compra nasce sabendo a qual O.S. se destina, evitando compras sem origem clara.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Visibilidade de Entrega</div>
+          <p class="card-text">Assim que o Almoxarifado confere e dá entrada na nota, a O.S. reflete imediatamente que o insumo já está na casa.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Controle de Saldo e Baixa</div>
+          <p class="card-text">Entradas, saídas e reservas para a O.S. ficam registradas com responsável, data e quantidade exata.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: PRODUÇÃO + PCP -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">11 • PLANEJAMENTO E FÁBRICA</div>
+          <h2 class="slide-title">Produção + PCP</h2>
+          <p class="slide-lead">Representação conceitual da programação e acompanhamento fabril, pronta para refletir as etapas reais confirmadas pela VETEC.</p>
+        </div>
+      </div>
+
+      <div class="card card-steel anim-item" style="margin-bottom: 24px;">
+        <div class="card-title">Sequência Conceitual de Fabricação</div>
+        <div class="flow-chain">
+          <div class="flow-node active-step">O.S.</div><span class="flow-arrow">→</span>
+          <div class="flow-node">PCP</div><span class="flow-arrow">→</span>
+          <div class="flow-node">Planejamento</div><span class="flow-arrow">→</span>
+          <div class="flow-node">Produção</div><span class="flow-arrow">→</span>
+          <div class="flow-node">Acompanhamento</div><span class="flow-arrow">→</span>
+          <div class="flow-node">Conclusão</div>
+        </div>
+      </div>
+
+      <div class="grid-2 anim-item">
+        <div class="card">
+          <div class="card-title">Planejamento e Controle (PCP)</div>
+          <ul class="check-list">
+            <li>Organização das Ordens de Produção vinculadas à O.S.</li>
+            <li>Definição de prioridades, prazos e responsáveis</li>
+            <li>Conferência prévia de projeto liberado e materiais disponíveis</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Execução e Acompanhamento na Produção</div>
+          <ul class="check-list">
+            <li>Registro de início, avanço e conclusão dos trabalhos</li>
+            <li>Apontamento de eventuais problemas, paradas ou retrabalhos</li>
+            <li>Inspeção e liberação formal para Montagem ou Medição</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 12: DOCUMENTOS E INFORMAÇÕES -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">12 • GESTÃO DOCUMENTAL</div>
+          <h2 class="slide-title">Documentos e Informações Centralizados</h2>
+          <p class="slide-lead">Todos os arquivos técnicos, comerciais e operacionais ficam anexados diretamente à entidade correta dentro do sistema.</p>
+        </div>
+      </div>
+
+      <div class="grid-3 anim-item">
+        <div class="card"><div class="card-title"><span>📄 Orçamentos</span><span class="badge badge-cyan">Comercial</span></div><p class="card-text">Propostas enviadas, planilhas de composição e registros de aprovação do cliente.</p></div>
+        <div class="card"><div class="card-title"><span>📐 Projetos e Desenhos</span><span class="badge badge-cyan">Engenharia</span></div><p class="card-text">Plantas, detalhamentos, listas de materiais e controle claro de revisões.</p></div>
+        <div class="card"><div class="card-title"><span>🛒 Pedidos e Notas</span><span class="badge badge-cyan">Suprimentos</span></div><p class="card-text">Cotações, ordens de compra emitidas e notas fiscais recebidas no almoxarifado.</p></div>
+        <div class="card"><div class="card-title"><span>📊 Medições</span><span class="badge badge-cyan">Financeiro</span></div><p class="card-text">Boletins de medição, comprovantes de avanço físico e aceite do cliente.</p></div>
+        <div class="card"><div class="card-title"><span>📋 Documentos Técnicos</span><span class="badge badge-cyan">Qualidade</span></div><p class="card-text">Memoriais, certificados de matérias-primas, relatórios de inspeção e ARTs.</p></div>
+        <div class="card"><div class="card-title"><span>📷 Fotos e Anexos</span><span class="badge badge-cyan">Evidências</span></div><p class="card-text">Fotos de visitas técnicas, progresso na fábrica e execução da montagem em campo.</p></div>
+      </div>
+    </section>
+
+    <!-- SLIDE 13: SEGURANÇA E PERMISSÕES (SIMULADOR INTERATIVO) -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">13 • SEGURANÇA E PERMISSÕES</div>
+          <h2 class="slide-title">"Cada pessoa possui acesso de acordo com sua função."</h2>
+          <p class="slide-lead">Clique nos perfis abaixo para visualizar como o sistema protege informações sensíveis e organiza o trabalho de cada área.</p>
+        </div>
+      </div>
+
+      <div class="grid-2 anim-item" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+          <div class="card-title">Selecione um Perfil de Usuário</div>
+          <div class="flow-chain" id="roleButtons">
+            <div class="flow-node interactive active-step" data-role="admin">Administrador</div>
+            <div class="flow-node interactive" data-role="gestor">Gestor</div>
+            <div class="flow-node interactive" data-role="engenharia">Engenharia</div>
+            <div class="flow-node interactive" data-role="compras">Compras</div>
+            <div class="flow-node interactive" data-role="pcp">PCP</div>
+            <div class="flow-node interactive" data-role="producao">Produção</div>
+            <div class="flow-node interactive" data-role="almoxarifado">Almoxarifado</div>
+            <div class="flow-node interactive" data-role="financeiro">Financeiro</div>
+            <div class="flow-node interactive" data-role="funcionario">Funcionário</div>
+          </div>
+        </div>
+
+        <div class="card card-cyan" id="rolePreviewCard">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 14: O QUE A GESTÃO GANHA -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">14 • BENEFÍCIOS ESTRATÉGICOS POTENCIAIS</div>
+          <h2 class="slide-title">O Que a Gestão da VETEC Ganha</h2>
+          <p class="slide-lead">Potencial de ganho estrutural ao transformar processos isolados em uma operação digital integrada.</p>
+        </div>
+      </div>
+
+      <div class="grid-4 anim-item">
+        <div class="card card-cyan">
+          <div class="card-title">1. VISIBILIDADE</div>
+          <p class="card-text">Saber exatamente onde cada O.S. está em tempo real.</p>
+        </div>
+        <div class="card card-cyan">
+          <div class="card-title">2. RASTREABILIDADE</div>
+          <p class="card-text">Saber quem fez o quê, quando e com qual observação.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">3. CONTROLE</div>
+          <p class="card-text">Acompanhar prazos e responsáveis em todas as etapas.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">4. INTEGRAÇÃO</div>
+          <p class="card-text">Conectar setores em torno da mesma base de dados.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">5. DADOS</div>
+          <p class="card-text">Transformar a operação diária em informação gerencial confiável.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">6. PADRONIZAÇÃO</div>
+          <p class="card-text">Reduzir a dependência de processos e controles informais.</p>
+        </div>
+        <div class="card card-steel" style="grid-column: span 2;">
+          <div class="card-title">7. ESCALABILIDADE</div>
+          <p class="card-text">Criar uma base tecnológica própria e robusta para sustentar o crescimento futuro da VETEC.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 15: VISÃO FUTURA -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">15 • HORIZONTE DE EVOLUÇÃO</div>
+          <h2 class="slide-title">Visão Futura da Plataforma</h2>
+          <p class="slide-lead">A fundação modular permite acoplar novas camadas conforme a necessidade estratégica da VETEC.</p>
+        </div>
+        <span class="badge badge-amber" style="font-size:13px;">Possibilidades futuras — não necessariamente fazem parte da 1ª versão</span>
+      </div>
+
+      <div class="grid-3 anim-item">
+        <div class="card">
+          <div class="card-title">Gestão, BI & Margens</div>
+          <ul class="check-list">
+            <li>Relatórios avançados</li>
+            <li>Indicadores de produtividade</li>
+            <li>Painéis de BI (Business Intelligence)</li>
+            <li>Indicadores de margem por O.S.</li>
+            <li>Planejamento avançado de capacidade</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Integrações & Mobilidade</div>
+          <ul class="check-list">
+            <li>Integração financeira completa</li>
+            <li>Integração fiscal (Notas Fiscais)</li>
+            <li>Acesso mobile para equipes de campo</li>
+            <li>Assinatura digital de documentos</li>
+            <li>Integração com outros sistemas</li>
+          </ul>
+        </div>
+        <div class="card card-cyan">
+          <div class="card-title">Automação & Inteligência</div>
+          <ul class="check-list">
+            <li>Notificações automáticas por e-mail</li>
+            <li>Automações de rotinas operacionais</li>
+            <li>Recursos de Inteligência Artificial aplicados à engenharia e gestão</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 16: COMO O SISTEMA SERÁ IMPLEMENTADO -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">16 • CRONOGRAMA POR ETAPAS</div>
+          <h2 class="slide-title">Como o Sistema Será Implementado</h2>
+          <p class="slide-lead">Desenvolvimento progressivo em 10 fases lógicas, garantindo segurança e validação contínua.</p>
+        </div>
+      </div>
+
+      <div class="grid-4 anim-item" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="card card-cyan"><span class="badge badge-cyan">FASE 1</span><div class="card-title">Fundação</div><p class="card-text">Banco, segurança, logins, permissões e base arquitetural.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 2</span><div class="card-title">Demandas + O.S.</div><p class="card-text">Clientes, abertura da O.S., status, timeline e anexos.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 3</span><div class="card-title">Orçamentos</div><p class="card-text">Versões de propostas, itens, envio e aprovação.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 4</span><div class="card-title">Projetos</div><p class="card-text">Detalhamento técnico, tarefas, desenhos e revisões.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 5</span><div class="card-title">Compras</div><p class="card-text">Solicitações, cotações, pedidos e fornecedores.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 6</span><div class="card-title">Almoxarifado</div><p class="card-text">Materiais, entradas, saídas, saldo e vínculo com O.S.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 7</span><div class="card-title">PCP + Produção</div><p class="card-text">Planejamento fabril, ordens de produção e apontamentos.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 8</span><div class="card-title">Montagem</div><p class="card-text">Atividades em campo, equipes, agenda e evidências.</p></div>
+        <div class="card"><span class="badge badge-steel">FASE 9</span><div class="card-title">Medição + Fatur.</div><p class="card-text">Boletins de medição, faturamento e encerramento.</p></div>
+        <div class="card card-cyan"><span class="badge badge-cyan">FASE 10</span><div class="card-title">Dashboards + Gestão</div><p class="card-text">Painel executivo, alertas de gargalos e indicadores.</p></div>
+      </div>
+    </section>
+
+    <!-- SLIDE 17: TECNOLOGIA -->
+    <section class="slide">
+      <div class="slide-header anim-item">
+        <div>
+          <div class="slide-kicker">17 • TECNOLOGIA E SEGURANÇA CORPORATIVA</div>
+          <h2 class="slide-title">Arquitetura Sólida em Servidor Próprio da VETEC</h2>
+          <p class="slide-lead">Visão executiva da infraestrutura: simplicidade de acesso para os colaboradores e controle total dos dados pela empresa.</p>
+        </div>
+      </div>
+
+      <div class="grid-2 anim-item">
+        <div class="card card-cyan">
+          <div class="card-title">Infraestrutura Sob Domínio da VETEC</div>
+          <ul class="check-list">
+            <li><strong>Sistema Web com Acesso por Navegador:</strong> utilização imediata nas estações de trabalho, sem instalações complexas.</li>
+            <li><strong>Servidor Próprio & Banco de Dados Próprio:</strong> todas as informações estratégicas permanecem dentro da infraestrutura da VETEC.</li>
+            <li><strong>Arquitetura Modular e Expansível:</strong> preparada para crescer junto com a operação.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Governança, Proteção e Continuidade</div>
+          <ul class="check-list">
+            <li><strong>Autenticação e Permissões:</strong> acesso individualizado conforme o cargo de cada colaborador.</li>
+            <li><strong>Auditoria Integrada:</strong> registro automático de quem realizou cada ação relevante no sistema.</li>
+            <li><strong>Rotina de Backups:</strong> proteção sistemática do banco de dados e dos documentos anexados.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 18: ENCERRAMENTO -->
+    <section class="slide">
+      <div class="hero-grid">
+        <div class="anim-item">
+          <div class="slide-kicker">18 • ENCERRAMENTO EXECUTIVO</div>
+          <h1 class="hero-title" style="font-size:48px;">
+            UMA OPERAÇÃO.<br/>
+            UMA FONTE DE INFORMAÇÃO.<br/>
+            <span class="vetec-metal-logo" style="font-size:56px;">UM SISTEMA.</span>
+          </h1>
+          <div class="hero-quote">
+            "O objetivo não é apenas digitalizar tarefas.<br/>
+            É criar uma visão integrada da operação da VETEC."
+          </div>
+          <p class="hero-sub">
+            Apresentação Executiva concluída. Estamos prontos para alinhar as particularidades operacionais da VETEC e avançar para a implementação estruturada.
+          </p>
+          <button class="btn-cta-start" onclick="window.goToSlide(0)">↺ Reiniciar Apresentação</button>
+        </div>
+
+        <div class="anim-item">
+          <div class="hero-logo-showcase">
+            <!-- Substitua "logo-vetec-hero.jpg" pelo caminho da sua imagem real se desejar -->
+            <img src="logo-vetec-hero.jpg" alt="VETEC Engenharia Industrial" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgNTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGExMjIwIiByeD0iMTIiLz48cG9seWdvbiBwb2ludHM9IjQwMCw4MCA2MjAsMTcwIDYyMCwzMzAgNDAwLDQyMCAxODAsMzMwIDE4MCwxNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzM4YmRmOCIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjMiLz48dGV4dCB4PSI0MDAiIHk9IjI4MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjEwMCIgZmlsbD0iI2YxZjVmOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjEyIj5WRVRFQzwvdGV4dD48dGV4dCB4PSI0MDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzM4YmRmOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjYiPkVOR0VOSEFSSUEgSU5EVVNUUklBTDwvdGV4dD48bGluZSB4MT0iMjUwIiB5MT0iMzcwIiB4Mj0iNTUwIiB5Mj0iMzcwIiBzdHJva2U9IiMzOGJkZjgiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg=='" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM BAR -->
+  <footer class="bottombar">
+    <div class="progress-wrap">
+      <span class="slide-counter" id="slideCounter">01 / 18</span>
+      <div class="dot-nav" id="dotNav"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-nav" id="btnPrev">← Anterior</button>
+      <button class="btn-nav" id="btnNext">Próximo →</button>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      /* 1. CONTROLE DE SLIDES E DOTS INTERATIVOS */
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+      let current = 0;
+
+      const counterEl = document.getElementById('slideCounter');
+      const selectorEl = document.getElementById('slideSelector');
+      const dotNavEl = document.getElementById('dotNav');
+      const btnPrev = document.getElementById('btnPrev');
+      const btnNext = document.getElementById('btnNext');
+      const btnFullscreen = document.getElementById('btnFullscreen');
+      const brandHome = document.getElementById('brandHome');
+
+      slides.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.className = 'dot-btn' + (idx === 0 ? ' active' : '');
+        dot.title = `Ir para Slide ${idx + 1}`;
+        dot.addEventListener('click', () => updateSlide(idx));
+        dotNavEl.appendChild(dot);
+      });
+
+      const dots = Array.from(dotNavEl.querySelectorAll('.dot-btn'));
+
+      function updateSlide(index) {
+        if (index < 0 || index >= total) return;
+        slides[current].classList.remove('active');
+        dots[current].classList.remove('active');
+
+        current = index;
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+
+        const num = String(current + 1).padStart(2, '0');
+        const tot = String(total).padStart(2, '0');
+        counterEl.textContent = `${num} / ${tot}`;
+        selectorEl.value = String(current);
+
+        btnPrev.disabled = current === 0;
+        btnNext.disabled = current === total - 1;
+      }
+
+      window.goToSlide = updateSlide;
+
+      btnPrev.addEventListener('click', () => updateSlide(current - 1));
+      btnNext.addEventListener('click', () => updateSlide(current + 1));
+      brandHome.addEventListener('click', () => updateSlide(0));
+      selectorEl.addEventListener('change', (e) => updateSlide(Number(e.target.value)));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          updateSlide(current + 1);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          updateSlide(current - 1);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          updateSlide(0);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          updateSlide(total - 1);
+        } else if (e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      });
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+
+      /* 2. SIMULADOR INTERATIVO DE O.S. (SLIDE 5) */
+      const tabData = {
+        resumo: `
+          <div class="grid-3">
+            <div class="card"><div class="card-title">Escopo da O.S.</div><p class="card-text">Fabricação de estrutura metálica industrial conforme especificações técnicas aprovadas pelo cliente.</p></div>
+            <div class="card"><div class="card-title">Coordenação & Prazos</div><p class="card-text"><strong>Setor Atual:</strong> Produção<br/><strong>Início Fábrica:</strong> 10/11<br/><strong>Rastreabilidade:</strong> 10 eventos registrados</p></div>
+            <div class="card card-cyan"><div class="card-title">Visão Consolidada</div><p class="card-text">Orçamento aprovado (02/11), Projeto detalhado (02/11), Materiais recebidos no Almoxarifado (08/11) e Produção em andamento.</p></div>
+          </div>
+        `,
+        orcamento: `
+          <table class="data-table">
+            <thead><tr><th>Versão</th><th>Data</th><th>Evento</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>ORC-2026-00124-V01</td><td>27/10</td><td>Orçamento inicial enviado ao cliente</td><td><span class="badge badge-amber">Revisão solicitada (30/10)</span></td></tr>
+              <tr><td><strong>ORC-2026-00124-V02</strong></td><td>02/11</td><td>Versão revisada e aprovada pelo cliente</td><td><span class="badge badge-green">Aprovado</span></td></tr>
+            </tbody>
+          </table>
+        `,
+        projeto: `
+          <div class="grid-2">
+            <div class="card"><div class="card-title">Detalhamento de Engenharia</div><p class="card-text">Projeto iniciado em 02/11 logo após aprovação comercial. Desenhos executivos e lista de materiais vinculados à O.S.</p></div>
+            <div class="card"><div class="card-title">Controle de Revisões</div><p class="card-text">Todas as revisões anteriores permanecem salvas para consulta e auditoria técnica.</p></div>
+          </div>
+        `,
+        compras: `
+          <table class="data-table">
+            <thead><tr><th>Pedido</th><th>Data Compra</th><th>Vínculo</th><th>Situação</th></tr></thead>
+            <tbody>
+              <tr><td>PC-2026-00087</td><td>05/11</td><td>Vinculado diretamente à O.S. #2026-00124</td><td><span class="badge badge-green">Entregue em 08/11</span></td></tr>
+            </tbody>
+          </table>
+        `,
+        materiais: `
+          <div class="card"><div class="card-title">Materiais e Almoxarifado</div><p class="card-text">Materiais recebidos e conferidos em 08/11, com disponibilização vinculada à O.S. #2026-00124 para liberação da fábrica.</p></div>
+        `,
+        pcp: `
+          <div class="card"><div class="card-title">Planejamento e Controle da Produção (PCP)</div><p class="card-text">Ordem de Produção programada após confirmação de projeto liberado e insumos disponíveis no almoxarifado.</p></div>
+        `,
+        producao: `
+          <div class="card card-cyan"><div class="card-title">Acompanhamento de Produção</div><p class="card-text">Produção iniciada em 10/11. Registro de etapas, apontamentos, responsáveis e controle de qualidade conectados à O.S.</p></div>
+        `,
+        montagem: `
+          <div class="card"><div class="card-title">Montagem em Campo</div><p class="card-text">Estrutura preparada para agendamento de equipe, controle de atividades externas, fotos e ocorrências quando aplicável.</p></div>
+        `,
+        medicao: `
+          <div class="card"><div class="card-title">Medição e Faturamento</div><p class="card-text">Aguardando conclusão fabril/campo para consolidação do boletim de medição, aprovação e faturamento.</p></div>
+        `,
+        documentos: `
+          <div class="grid-3">
+            <div class="card"><div class="card-title">📄 Orçamento_V02.pdf</div><p class="card-text">Vinculado à aba Orçamento</p></div>
+            <div class="card"><div class="card-title">📐 Desenho_Estrutural.dwg</div><p class="card-text">Vinculado à aba Projeto</p></div>
+            <div class="card"><div class="card-title">🧾 Pedido_PC00087.pdf</div><p class="card-text">Vinculado à aba Compras</p></div>
+          </div>
+        `,
+        historico: `
+          <div class="card"><div class="card-title">Linha do Tempo Completa da O.S.</div><p class="card-text">24/10 Demanda recebida → 24/10 O.S. criada → 25/10 Visita técnica → 27/10 Orçamento enviado → 30/10 Revisão solicitada → 02/11 Orçamento aprovado → 02/11 Projeto iniciado → 05/11 Compra realizada → 08/11 Material recebido → 10/11 Produção iniciada.</p></div>
+        `
+      };
+
+      const osTabBtns = document.querySelectorAll('.os-tab');
+      const osTabContent = document.getElementById('osTabContent');
+
+      osTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          osTabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          osTabContent.innerHTML = tabData[btn.getAttribute('data-tab')] || '';
+        });
+      });
+      osTabContent.innerHTML = tabData.resumo;
+
+      /* 3. EXPLORADOR DO FLUXO OFICIAL DA VETEC (SLIDE 6) */
+      const flowDetails = [
+        { title: "1. Recebimento da Demanda", sector: "Comercial / Atendimento", desc: "Ponto de partida oficial: registra o cliente solicitante, a necessidade inicial e a data/hora de entrada." },
+        { title: "2. Abertura da O.S.", sector: "Comercial / Engenharia", desc: "Gera o identificador único da Ordem de Serviço que servirá como fio condutor de todo o processo." },
+        { title: "3. Visita Técnica (Quando Necessária)", sector: "Engenharia", desc: "Etapa condicional para avaliação in loco, registro fotográfico e coleta de medidas no cliente." },
+        { title: "4. Levantamento do Escopo", sector: "Engenharia", desc: "Consolidação técnica dos requisitos necessários para alimentar a orçamentação com segurança." },
+        { title: "5. Elaboração do Orçamento", sector: "Comercial / Orçamentos", desc: "Estruturação de itens, quantidades, custos e condições comerciais em versões preservadas." },
+        { title: "6. Envio ao Cliente", sector: "Comercial", desc: "Formalização do envio da proposta comercial com registro de data, versão e documento anexo." },
+        { title: "7. Aguardando Aprovação", sector: "Comercial / Gestão", desc: "Monitoramento ativo do retorno do cliente, com controle de tempo para evitar propostas esquecidas." },
+        { title: "8. Aprovação", sector: "Comercial / Diretoria", desc: "Decisão formal: caso solicite ajuste, gera nova revisão; quando aprovada, destrava a Engenharia." },
+        { title: "9. Projetos / Detalhamento", sector: "Engenharia", desc: "Desenvolvimento de desenhos técnicos, revisões, tarefas de projeto e definição de insumos." },
+        { title: "10. Compras", sector: "Suprimentos / Compras", desc: "Solicitação, cotação, aprovação e emissão do pedido de compra vinculado diretamente à O.S." },
+        { title: "11. Almoxarifado", sector: "Almoxarifado", desc: "Recebimento físico, conferência de materiais, entrada em estoque e disponibilização para a O.S." },
+        { title: "12. PCP", sector: "Planejamento e Controle", desc: "Programação da produção considerando prioridades, prazos, projetos e materiais recepcionados." },
+        { title: "13. Produção", sector: "Fábrica / Produção", desc: "Execução fabril das ordens de produção com registro de início, apontamentos, inspeção e término." },
+        { title: "14. Montagem em Campo (Quando Necessária)", sector: "Equipe de Campo", desc: "Etapa condicional para serviços que exigem instalação externa, registrando equipe, agenda e evidências." },
+        { title: "15. Medição / Faturamento", sector: "Engenharia / Financeiro", desc: "Apuração dos itens executados, aprovação da medição e processamento do faturamento." },
+        { title: "16. O.S. Finalizada", sector: "Gestão / Operações", desc: "Encerramento formal mediante checklist concluído, preservando todo o histórico para consulta." }
+      ];
+
+      const flowNodes = document.querySelectorAll('#vetecFlowInteractive .flow-node');
+      const flowStepDetail = document.getElementById('flowStepDetail');
+
+      function renderFlowStep(idx) {
+        const item = flowDetails[idx];
+        flowStepDetail.innerHTML = `
+          <span class="badge badge-cyan">${item.sector}</span>
+          <div class="card-title" style="font-size:20px; margin-top:8px;">${item.title}</div>
+          <p class="card-text" style="font-size:16px; color:#e2e8f0; margin-top:8px;">${item.desc}</p>
+          <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-subtle); font-size:13px; color:var(--cyan-bright); font-family:var(--font-mono);">
+            ✓ Gera registro automático na Timeline da O.S.
+          </div>
+        `;
+      }
+
+      flowNodes.forEach(node => {
+        node.addEventListener('click', () => {
+          flowNodes.forEach(n => n.classList.remove('active-step'));
+          node.classList.add('active-step');
+          renderFlowStep(Number(node.getAttribute('data-step')));
+        });
+      });
+      renderFlowStep(0);
+
+      /* 4. SIMULADOR DE PERMISSÕES POR FUNÇÃO (SLIDE 13) */
+      const roleDetails = {
+        admin: { title: "Perfil: Administrador", badge: "Acesso Total", items: ["Configuração de usuários, perfis e permissões do sistema", "Acesso completo aos módulos operacionais, gerenciais e logs de auditoria", "Parametrização de checklists e regras operacionais"] },
+        gestor: { title: "Perfil: Gestor / Diretoria", badge: "Visão Gerencial", items: ["Acesso ao Dashboard executivo, indicadores e alerta de O.S. paradas", "Aprovação de alçadas, acompanhamento de margens e prazos globais", "Consulta completa ao histórico e rastreabilidade de todas as O.S."] },
+        engenharia: { title: "Perfil: Engenharia", badge: "Módulo Técnico", items: ["Registro de visitas técnicas e levantamento detalhado de escopo", "Gestão de projetos, desenhos técnicos, revisões e tarefas", "Solicitação técnica de materiais vinculada à O.S."] },
+        compras: { title: "Perfil: Compras", badge: "Módulo Suprimentos", items: ["Recebimento de solicitações de compra vinculadas às O.S.", "Condução de cotações, cadastro de fornecedores e emissão de pedidos", "Acompanhamento de prazos de entrega junto aos fornecedores"] },
+        pcp: { title: "Perfil: PCP", badge: "Planejamento Fabril", items: ["Visualização de O.S. com projetos liberados e materiais no almoxarifado", "Criação e priorização de Ordens de Produção", "Acompanhamento do avanço das etapas produtivas"] },
+        producao: { title: "Perfil: Produção", badge: "Chão de Fábrica", items: ["Consulta às Ordens de Produção e desenhos técnicos liberados", "Apontamento de início, término, quantidades, paradas e inspeção", "Sem acesso a dados financeiros, margens ou faturamento"] },
+        almoxarifado: { title: "Perfil: Almoxarifado", badge: "Controle de Estoque", items: ["Conferência e recebimento físico de pedidos de compra", "Controle de entradas, saídas, localização e saldo de materiais", "Disponibilização e reserva de insumos diretamente para a O.S."] },
+        financeiro: { title: "Perfil: Financeiro", badge: "Medição & Faturamento", items: ["Acompanhamento de boletins de medição aprovados", "Registro de faturamento e validação financeira para encerramento da O.S.", "Consulta a pedidos de compra e notas vinculadas"] },
+        funcionario: { title: "Perfil: Funcionário", badge: "Execução Direcionada", items: ["Visualização limpa e objetiva apenas das tarefas e atividades sob sua responsabilidade", "Registro de execução e anexos operacionais pertinentes à sua função", "Proteção integral dos dados estratégicos dos demais setores"] }
+      };
+
+      const roleBtns = document.querySelectorAll('#roleButtons .flow-node');
+      const rolePreviewCard = document.getElementById('rolePreviewCard');
+
+      function renderRole(key) {
+        const r = roleDetails[key];
+        rolePreviewCard.innerHTML = `
+          <div class="card-title"><span>${r.title}</span><span class="badge badge-cyan">${r.badge}</span></div>
+          <ul class="check-list" style="margin-top:12px;">
+            ${r.items.map(i => `<li>${i}</li>`).join('')}
+          </ul>
+        `;
+      }
+
+      roleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          roleBtns.forEach(b => b.classList.remove('active-step'));
+          btn.classList.add('active-step');
+          renderRole(btn.getAttribute('data-role'));
+        });
+      });
+      renderRole('admin');
+
+      /* 5. CANVAS DE CIRCUITOS ILUMINADOS (ESTILO DA LOGO VETEC) */
+      const canvas = document.getElementById('circuitCanvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const tracks = Array.from({ length: 14 }, (_, i) => ({
+        y: (height / 15) * (i + 1),
+        x: Math.random() * width,
+        speed: 0.35 + Math.random() * 0.65,
+        length: 60 + Math.random() * 110
+      }));
+
+      function drawCircuits() {
+        ctx.clearRect(0, 0, width, height);
+        tracks.forEach(t => {
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, t.y);
+          ctx.lineTo(width, t.y);
+          ctx.stroke();
+
+          const grad = ctx.createLinearGradient(t.x, t.y, t.x + t.length, t.y);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+          grad.addColorStop(0.8, 'rgba(56, 189, 248, 0.45)');
+          grad.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
+
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(t.x, t.y);
+          ctx.lineTo(t.x + t.length, t.y);
+          ctx.stroke();
+
+          ctx.fillStyle = '#7dd3fc';
+          ctx.beginPath();
+          ctx.arc(t.x + t.length, t.y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          t.x += t.speed;
+          if (t.x > width) t.x = -t.length;
+        });
+        requestAnimationFrame(drawCircuits);
+      }
+      drawCircuits();
+    })();
+  </script>
+</body>
+</html>
